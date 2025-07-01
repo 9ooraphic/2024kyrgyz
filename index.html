@@ -485,23 +485,26 @@ function onTouchMove(event) {
         
         // 핀치 줌
         if (lastTouchDistance > 0) {
-            const scale = currentDistance / lastTouchDistance;
-            const zoomSpeed = 0.02;
-            
-            if (scale > 1) {
-                // 확대
-                camera.position.z -= zoomSpeed;
-            } else {
-                // 축소
-                camera.position.z += zoomSpeed;
-            }
-            
-            // 줌 범위 제한
-            camera.position.z = Math.max(1.5, Math.min(8, camera.position.z));
-        }
-        
-        lastTouchDistance = currentDistance;
-        lastTouchCenter = currentCenter;
+    const scale = currentDistance / lastTouchDistance;
+    const scaleDiff = Math.abs(scale - 1);
+    
+    // 동적 줌 속도 (움직임이 클수록 더 빠르게)
+    let zoomSpeed = 0.08 + (scaleDiff * 0.3); // 기본 속도를 4배 증가
+    
+    // 비선형 가속 (큰 움직임에서 더욱 빠르게)
+    if (scaleDiff > 0.1) {
+        zoomSpeed *= 1.5;
+    }
+    if (scaleDiff > 0.2) {
+        zoomSpeed *= 1.8;
+    }
+    
+    const zoomDelta = (1 - scale) * zoomSpeed;
+    camera.position.z += zoomDelta;
+    
+    // 줌 범위 제한 (더 넓은 범위)
+    camera.position.z = Math.max(0.8, Math.min(12, camera.position.z));
+}
     }
 }
 
