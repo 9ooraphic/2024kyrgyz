@@ -17,7 +17,7 @@
 
 
         body {
-            font-family: 'Noto Serif KR', serif';
+            font-family: 'Noto Serif KR', serif;
             overflow: hidden;
             height: 100vh;
             cursor: grab;
@@ -55,7 +55,7 @@
             transform: translateX(-50%);
             color: rgba(214, 214, 214, 0.9);
             z-index: 100;
-            font-family: 'Noto Serif KR', serif';
+            font-family: 'Noto Serif KR', serif;
             font-size: 24px;
             font-weight: 400;
             letter-spacing: 2px;
