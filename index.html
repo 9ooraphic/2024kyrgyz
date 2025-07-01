@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <title>Kyrgyzstan</title>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div>Loading...We're still in Kyrgyzstan</div>
+            <div style="margin-top: 15px;">
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+            </div>
+        </div>
+        
+        <div id="title" style="display: none;">Kyrgyzstan</div>
+        
+        <div id="instructions" style="display: none;">
+            Drag to rotate • Scroll to zoom<br>
+            Click image to enlarge
+        </div>
+        
+        <div id="copyright" style="display: none;">© <a href="https://www.instagram.com/9ooraphic/" target="_blank" style="color: inherit; text-decoration: none;"> goonayoung</a></div>
+        
+        <div id="imageModal">
+            <button id="closeButton">✕</button>
+            <img id="modalImage" src="" alt="Enlarged image">
+            <div id="photoCredit" style="position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.8); font-size: 14px; text-align: center; opacity: 0; transition: opacity 0.3s ease;">
+                Photo by <span id="photographerName">Unknown</span>
+            </div>
+        </div>
+        
+        <img id="dev-toggle" src="images/icon.png" alt="Speed Control" title="Speed Control">
+        
+        <div id="developer-panel">
+            <h3 style="margin: 0 0 15px 0; font-size: 16px;">Speed</h3>
+            
+            <div style="margin: 15px 0;">
+                <label style="font-size: 12px; display: block; margin-bottom: 5px;">Rotation Speed:</label>
+                <input type="range" id="speedSlider" min="0" max="0.01" step="0.0001" value="0.001" style="width: 100%;">
+                <span id="speedValue" style="font-size: 11px; color: #ccc;">0.001</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, sphere;
+        let images = [];
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+        let isModalOpen = false;
+        let isTransitioning = false;
+        let selectedImage = null;
+        let autoRotateSpeed = 0.001; // 기본 천천히 자동 회전
+        let mouseX = 0; // 마우스 X 위치 (-1 ~ 1)
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        let uploadedImages = []; // 업로드된 이미지들
+        let loadedImagesCount = 0;
+        let totalImages = 0;
+        
+        // 50개 이미지 파일들과 사진작가 정보
+        const imageFiles = [];
+        const photographers = [];
+        
+        for (let i = 1; i <= 52; i++) {
+            imageFiles.push(`images/photo${i}.jpg`);
+            
+            // 각 이미지마다 개별 사진작가 지정
+            if (i === 1) photographers.push('Chaekyung');
+            else if (i === 2) photographers.push('Chaekyung');
+            else if (i === 3) photographers.push('Chaekyung');
+            else if (i === 4) photographers.push('Chaekyung');
+            else if (i === 5) photographers.push('Chaekyung');
+            else if (i === 6) photographers.push('Chaekyung');
+            else if (i === 7) photographers.push('Nayoung');
+            else if (i === 8) photographers.push('Nayoung');
+            else if (i === 9) photographers.push('Nayoung');
+            else if (i === 10) photographers.push('Nayoung');
+            else if (i === 11) photographers.push('Nayoung');
+            else if (i === 12) photographers.push('Nayoung');
+            else if (i === 13) photographers.push('Nayoung');
+            else if (i === 14) photographers.push('Nayoung');
+            else if (i === 15) photographers.push('Nayoung');
+            else if (i === 16) photographers.push('Nayoung');
+            else if (i === 17) photographers.push('Nayoung');
+            else if (i === 18) photographers.push('Nayoung');
+            else if (i === 19) photographers.push('Nayoung');
+            else if (i === 20) photographers.push('Nayoung');
+            else if (i === 21) photographers.push('Nayoung');
+            else if (i === 22) photographers.push('Nayoung');
+            else if (i === 23) photographers.push('Nayoung');
+            else if (i === 24) photographers.push('Nayoung');
+            else if (i === 25) photographers.push('Nayoung');
+            else if (i === 26) photographers.push('Nayoung');
+            else if (i === 27) photographers.push('Nayoung');
+            else if (i === 28) photographers.push('Nayoung');
+            else if (i === 29) photographers.push('Nayoung');
+            else if (i === 30) photographers.push('Nayoung');
+            else if (i === 31) photographers.push('Nayoung');
+            else if (i === 32) photographers.push('Nayoung');
+            else if (i === 33) photographers.push('Nayoung');
+            else if (i === 34) photographers.push('Nayoung');
+            else if (i === 35) photographers.push('Nayoung');
+            else if (i === 36) photographers.push('Jihyun');
+            else if (i === 37) photographers.push('Jihyun');
+            else if (i === 38) photographers.push('Jihyun');
+            else if (i === 39) photographers.push('Jihyun');
+            else if (i === 40) photographers.push('Jihyun');
+            else if (i === 41) photographers.push('Jihyun');
+            else if (i === 42) photographers.push('Jihyun');
+            else if (i === 43) photographers.push('Jihyun');
+            else if (i === 44) photographers.push('Jihyun');
+            else if (i === 45) photographers.push('Jihyun');
+            else if (i === 46) photographers.push('Jihyun');
+            else if (i === 47) photographers.push('Jihyun');
+            else if (i === 48) photographers.push('Jihyun');
+            else if (i === 49) photographers.push('Jihyun');
+            else if (i === 50) photographers.push('Jihyun');
+            else if (i === 51) photographers.push('Nayoung');
+            else if (i === 52) photographers.push('Nayoung');
+            else photographers.push('nayoung'); // 기본값
+        }
+        
+        // 임시 이미지 생성 함수
+        function createPlaceholderImage(index) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            
+            // 키르기스스탄 풍경을 연상시키는 색상들
+            const colors = [
+                ['#4a90e2', '#7bb3f0'], // 하늘색
+                ['#27ae60', '#58d68d'], // 초록색
+                ['#e74c3c', '#f1948a'], // 붉은색
+                ['#f39c12', '#f8c471'], // 주황색
+                ['#9b59b6', '#bb8fce'], // 보라색
+                ['#34495e', '#5d6d7e'], // 회색
+                ['#16a085', '#5dade2'], // 청록색
+                ['#d35400', '#e67e22']  // 갈색
+            ];
+            
+            const colorPair = colors[index % colors.length];
+            const gradient = ctx.createLinearGradient(0, 0, 400, 400);
+            gradient.addColorStop(0, colorPair[0]);
+            gradient.addColorStop(1, colorPair[1]);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 400);
+            
+            // 텍스처 추가
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * 400;
+                const y = Math.random() * 400;
+                const size = Math.random() * 3 + 1;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 텍스트
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Photo ${index + 1}`, 200, 190);
+            ctx.font = '14px Arial';
+            ctx.fillText('Kyrgyzstan', 200, 220);
+            
+            return canvas.toDataURL('image/jpeg', 0.5); // 60% 품질로 압축
+        }
+        
+        function init() {
+            // Scene 설정
+            scene = new THREE.Scene();
+            
+            // Camera 설정
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 4;
+            
+            // Renderer 설정
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // 조명 설정
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+            
+            createImageSphere();
+            setupEventListeners();
+            setupDeveloperPanel();
+            
+            // UI 표시
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('title').style.display = 'block';
+                document.getElementById('instructions').style.display = 'block';
+                document.getElementById('copyright').style.display = 'block';
+            }, 2000);
+            
+            animate();
+        }
+        
+        function createImageSphere() {
+            const radius = 2.5;
+            const imageCount = imageFiles.length;
+
+            totalImages = imageCount;
+            loadedImagesCount = 0;
+            
+            imageFiles.forEach((filename, index) => {
+                const loader = new THREE.TextureLoader();
+                loader.load(
+                    filename, // 실제 파일명 먼저 시도!
+                    function(texture) {
+                        // 성공 - 실제 이미지 로드됨
+                        console.log('Loaded real image:', filename);
+                        createImageMesh(texture, index, filename);
+                        checkAllImagesLoaded();
+                    },
+                    undefined,
+                    function(error) {
+                        // 실패 - 플레이스홀더 사용
+                        console.log('Failed to load:', filename, 'Using placeholder');
+                        const placeholderUrl = createPlaceholderImage(index);
+                        loader.load(placeholderUrl, function(texture) {
+                            createImageMesh(texture, index, filename);
+                        });
+                    }
+                );
+            });
+        }
+        function checkAllImagesLoaded() {
+    loadedImagesCount++;
+    
+    const progress = Math.round((loadedImagesCount / totalImages) * 100);
+    console.log(`Loading progress: ${progress}%`);
+    
+    if (loadedImagesCount >= totalImages) {
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('title').style.display = 'block';
+            document.getElementById('instructions').style.display = 'block';
+            document.getElementById('copyright').style.display = 'block';
+        }, 500);
+    }
+}
+        function createImageMesh(texture, index, filename) {
+            
+            if (isMobile && texture.image) {
+            const canvas = document.createElement('canvas');
+            const maxSize = 256; // 최대 256x256으로 제한
+            
+            // 비율 유지하면서 크기 조정
+            let newWidth, newHeight;
+            if (texture.image.width > texture.image.height) {
+                newWidth = maxSize;
+                newHeight = (texture.image.height / texture.image.width) * maxSize;
+            } else {
+                newHeight = maxSize;
+                newWidth = (texture.image.width / texture.image.height) * maxSize;
+            }
+            
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(texture.image, 0, 0, newWidth, newHeight);
+            
+            // 60% 품질로 압축된 새 텍스처 생성
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            const img = new Image();
+            img.onload = function() {
+                texture.image = img;
+                texture.needsUpdate = true;
+            };
+            img.src = compressedDataUrl;
+        }
+            // 이미지 원본 비율 계산
+            const img = texture.image;
+            const aspect = img.width / img.height;
+            const baseSize = 0.35;
+            
+            let width, height;
+            if (aspect > 1) {
+                // 가로가 더 긴 경우 (가로 사진)
+                width = baseSize;
+                height = baseSize / aspect;
+            } else {
+                // 세로가 더 긴 경우 (세로 사진)
+                width = baseSize * aspect;
+                height = baseSize;
+            }
+            
+            // 비율에 맞는 지오메트리 생성
+            const geometry = new THREE.PlaneGeometry(width, height);
+            const material = new THREE.MeshLambertMaterial({ 
+                map: texture,
+                transparent: true,
+                opacity: 0.95
+            });
+            
+            const imageMesh = new THREE.Mesh(geometry, material);
+            
+            // 구 표면에 균등 분포
+            const radius = 2.5;
+            const imageCount = imageFiles.length;
+            const phi = Math.acos(1 - 2 * (index + 0.5) / imageCount);
+            const theta = Math.PI * (1 + Math.sqrt(5)) * (index + 0.5);
+            
+            imageMesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+            imageMesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+            imageMesh.position.z = radius * Math.cos(phi);
+            
+            imageMesh.lookAt(0, 0, 0);
+            
+            imageMesh.userData = {
+                originalScale: new THREE.Vector3(1, 1, 1),
+                isHovered: false,
+                filename: filename,
+                imageUrl: texture.image.src,
+                index: index,
+                photographer: photographers[index] // 사진작가 정보 추가
+            };
+            
+            scene.add(imageMesh);
+            images.push(imageMesh);
+        }
+        
+        function setupEventListeners() {
+            const canvas = renderer.domElement;
+            
+            // 마우스 이벤트
+            canvas.addEventListener('mousedown', onMouseDown, false);
+            canvas.addEventListener('mousemove', onMouseMove, false);
+            canvas.addEventListener('mouseup', onMouseUp, false);
+            canvas.addEventListener('mouseleave', onMouseUp, false);
+            canvas.addEventListener('click', onCanvasClick, false);
+            
+            // 터치 이벤트
+            canvas.addEventListener('touchstart', onTouchStart, false);
+            canvas.addEventListener('touchmove', onTouchMove, false);
+            canvas.addEventListener('touchend', onTouchEnd, false);
+            
+            // 스크롤 이벤트 (더 민감하게)
+            canvas.addEventListener('wheel', onWheel, false);
+            
+            // 윈도우 리사이즈
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // 모달 이벤트
+            document.getElementById('closeButton').addEventListener('click', closeModal);
+            document.getElementById('imageModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // ESC 키로 모달 닫기
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isModalOpen) {
+                    closeModal();
+                }
+            });
+            
+            // 호버 효과
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            canvas.addEventListener('mousemove', function(event) {
+                if (!isDragging && !isModalOpen) {
+                    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                    
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(images);
+                    
+                    images.forEach(img => {
+                        img.userData.isHovered = false;
+                    });
+                    
+                    if (intersects.length > 0) {
+                        intersects[0].object.userData.isHovered = true;
+                        canvas.style.cursor = 'pointer';
+                    } else {
+                        canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+                    }
+                }
+            });
+        }
+        
+        function onMouseDown(event) {
+            if (isModalOpen) return;
+            isDragging = true;
+            document.body.classList.add('dragging');
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+        }
+        
+        function onMouseMove(event) {
+            if (isDragging && !isModalOpen) {
+                const deltaMove = {
+                    x: event.clientX - previousMousePosition.x,
+                    y: event.clientY - previousMousePosition.y
+                };
+                
+                // 더 민감한 회전
+                targetRotation.y += deltaMove.x * 0.005;
+                targetRotation.x += deltaMove.y * 0.005;
+                
+                targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
+                
+                previousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            }
+        }
+        
+        function onMouseUp() {
+            isDragging = false;
+            document.body.classList.remove('dragging');
+        }
+        
+        function onCanvasClick(event) {
+            if (isModalOpen || isDragging || isTransitioning) return;
+            
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(images);
+            
+            if (intersects.length > 0) {
+                const clickedImage = intersects[0].object;
+                zoomToCenter(clickedImage);
+            }
+        }
+        
+        // 터치 이벤트
+        let touchStartTime = 0;
+        let touchMoved = false;
+        let initialPinchDistance = 0;
+let lastPinchDistance = 0;
+
+function getTouchDistance(touch1, touch2) {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+        
+        function onTouchStart(event) {
+            if (isModalOpen) return;
+            event.preventDefault();
+            
+            if (event.touches.length === 1) {
+                touchStartTime = Date.now();
+                touchMoved = false;
+                isDragging = true;
+                previousMousePosition = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+            }
+            else if (event.touches.length === 2) {
+        // 핀치 줌
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        const pinchDelta = currentPinchDistance - lastPinchDistance;
+        
+        // 줌 적용 (손가락 벌리면 확대, 모으면 축소)
+        camera.position.z -= pinchDelta * 0.01;
+        camera.position.z = Math.max(1.5, Math.min(8, camera.position.z));
+        
+        lastPinchDistance = currentPinchDistance;
+    }
+        }
+        
+        function onTouchMove(event) {
+            event.preventDefault();
+            if (isDragging && event.touches.length === 1 && !isModalOpen) {
+                touchMoved = true;
+                const deltaMove = {
+                    x: event.touches[0].clientX - previousMousePosition.x,
+                    y: event.touches[0].clientY - previousMousePosition.y
+                };
+                
+                targetRotation.y += deltaMove.x * 0.015;
+                targetRotation.x += deltaMove.y * 0.015;
+                
+                targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
+                
+                previousMousePosition = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+            }
+        }
+        
+        function onTouchEnd(event) {
+            event.preventDefault();
+            isDragging = false;
+            
+            // 탭 감지 (짧은 터치)
+            if (!touchMoved && (Date.now() - touchStartTime) < 300) {
+                const touch = event.changedTouches[0];
+                const mouse = new THREE.Vector2();
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(images);
+                
+                if (intersects.length > 0) {
+                    // 터치된 이미지의 줌 효과
+                    const clickedImage = intersects[0].object;
+                    zoomToCenter(clickedImage);
+                }
+            }
+        }
+        
+        function onWheel(event) {
+            if (isModalOpen) return;
+            event.preventDefault();
+            
+            // 더 민감한 줌
+            const zoomSpeed = 0.2;
+            camera.position.z += event.deltaY * zoomSpeed * 0.01;
+            camera.position.z = Math.max(1.5, Math.min(8, camera.position.z));
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function zoomToCenter(targetImage) {
+            isTransitioning = true;
+            selectedImage = targetImage;
+            
+            // 현재 카메라 위치 저장
+            const startCameraPosition = camera.position.clone();
+            
+            // 중앙으로 줌인
+            const finalCameraPosition = new THREE.Vector3(0, 0, 1.2);
+            
+            // 애니메이션 변수
+            let animationProgress = 0;
+            const animationDuration = 1200;
+            const startTime = Date.now();
+            
+            // 모달 준비
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const photoCredit = document.getElementById('photoCredit');
+            const photographerName = document.getElementById('photographerName');
+            
+            modalImage.src = targetImage.userData.imageUrl;
+            photographerName.textContent = targetImage.userData.photographer;  // 이 줄 추가!
+            
+
+            modal.style.display = 'flex';
+            modal.style.opacity = '0';
+            photoCredit.style.opacity = '0';
+            
+            function animateZoom() {
+                const currentTime = Date.now();
+                animationProgress = Math.min((currentTime - startTime) / animationDuration, 1);
+                
+                const easeProgress = easeOutQuart(animationProgress);
+                
+                // 카메라를 중앙으로 줌인
+                camera.position.lerpVectors(startCameraPosition, finalCameraPosition, easeProgress);
+                
+                // 카메라가 항상 중심을 바라보도록
+                camera.lookAt(0, 0, 0);
+                
+                // 구 회전은 점점 느려지다가 멈춤
+                autoRotateSpeed = 0.001 * (1 - easeProgress);
+                
+                // 다른 이미지들 페이드아웃
+                images.forEach(img => {
+                    if (img !== targetImage) {
+                        img.material.opacity = 0.95 * (1 - easeProgress * 0.95);
+                    }
+                });
+                
+                // 50% 지점부터 모달 페이드인
+                if (easeProgress > 0.5) {
+                    const modalProgress = (easeProgress - 0.5) * 2;
+                    modal.style.opacity = modalProgress;
+                    modalImage.style.transform = `scale(${0.8 + modalProgress * 0.2})`;
+                    
+                    // 70% 지점부터 크레딧 표시
+                    if (easeProgress > 0.7) {
+                        const creditProgress = (easeProgress - 0.7) / 0.3;
+                        photoCredit.style.opacity = creditProgress * 0.8;
+                    }
+                }
+                
+                if (animationProgress < 1) {
+                    requestAnimationFrame(animateZoom);
+                } else {
+                    modal.classList.add('show');
+                    modal.style.opacity = '1';
+                    photoCredit.style.opacity = '0.8';
+                    isModalOpen = true;
+                }
+            }
+            
+            animateZoom();
+        }
+        
+        // 부드러운 easing 함수 (튕김 없음)
+        function easeOutQuart(t) {
+            return 1 - Math.pow(1 - t, 4);
+        }
+        
+        function openModal(imageUrl) {
+            // zoomToImage에서 이미 처리되므로 여기서는 단순화
+            if (!isTransitioning) {
+                isModalOpen = true;
+                const modal = document.getElementById('imageModal');
+                const modalImage = document.getElementById('modalImage');
+                
+                modalImage.src = imageUrl;
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+                
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+            }
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modal.classList.remove('show');
+            modal.style.opacity = '0';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                isModalOpen = false;
+                resetToSphere();
+            }, 600);
+        }
+        
+        function resetToSphere() {
+            if (!isTransitioning) return;
+            
+            // 원래 위치로 되돌리는 애니메이션
+            const startPosition = camera.position.clone();
+            const targetPosition = new THREE.Vector3(0, 0, 4);
+            
+            let animationProgress = 0;
+            const animationDuration = 1000;
+            const startTime = Date.now();
+            
+            function animateReset() {
+                const currentTime = Date.now();
+                animationProgress = Math.min((currentTime - startTime) / animationDuration, 1);
+                
+                const easeProgress = easeOutCubic(animationProgress);
+                
+                // 카메라 위치 복원
+                camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                
+                // 카메라가 다시 중심을 바라보도록
+                camera.lookAt(0, 0, 0);
+                
+                // 자동 회전 속도 복원
+                autoRotateSpeed = 0.001 * easeProgress;
+                
+                // 모든 이미지 투명도 복원
+                images.forEach(img => {
+                    img.material.opacity = 0.95;
+                });
+                
+                if (animationProgress < 1) {
+                    requestAnimationFrame(animateReset);
+                } else {
+                    isTransitioning = false;
+                    selectedImage = null;
+                }
+            }
+            
+            animateReset();
+        }
+        
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+        
+        // 개발자 패널 설정
+        function setupDeveloperPanel() {
+            const devToggle = document.getElementById('dev-toggle');
+            const devPanel = document.getElementById('developer-panel');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            
+            // 패널 토글
+            devToggle.addEventListener('click', () => {
+                devPanel.classList.toggle('show');
+            });
+            
+            // 속도 슬라이더
+            speedSlider.addEventListener('input', (e) => {
+                autoRotateSpeed = parseFloat(e.target.value);
+                speedValue.textContent = autoRotateSpeed.toFixed(4);
+            });
+        }
+        
+        function animate() {
+    requestAnimationFrame(animate);
+    
+    if (!isModalOpen && !isTransitioning) {
+        // 부드러운 수동 회전 애니메이션 (모바일/데스크톱 공통)
+        rotation.x += (targetRotation.x - rotation.x) * 0.08;
+        rotation.y += (targetRotation.y - rotation.y) * 0.08;
+        
+        if (isMobile) {
+    // 모바일: 원래대로 단순하게
+    scene.rotation.x = rotation.x;
+    scene.rotation.y = rotation.y + autoRotateSpeed;
+} else {
+            // 데스크톱: 커서 위치 기반 회전
+            const cursorInfluence = mouseX * 0.003;
+            const speedMultiplier = 1 + Math.abs(mouseX) * 0.5;
+            scene.rotation.x = rotation.x;
+            scene.rotation.y = rotation.y + (autoRotateSpeed + cursorInfluence) * speedMultiplier;
+        }
+        
+        // 호버 효과 (데스크톱만)
+        if (!isMobile) {
+            images.forEach(image => {
+                const targetScale = image.userData.isHovered ? 1.15 : 1.0;
+                image.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
+            });
+        }
+    }
+    
+    renderer.render(scene, camera);
+}
+        
+        // 사용자 이미지 로드 함수
+        function loadUserImages(imageUrls) {
+            images.forEach(img => scene.remove(img));
+            images = [];
+            
+            imageUrls.forEach((url, index) => {
+                const loader = new THREE.TextureLoader();
+                loader.load(url, function(texture) {
+                    const geometry = new THREE.PlaneGeometry(0.35, 0.35);
+                    const material = new THREE.MeshLambertMaterial({ 
+                        map: texture,
+                        transparent: true,
+                        opacity: 0.95
+                    });
+                    
+                    const imageMesh = new THREE.Mesh(geometry, material);
+                    
+                    const phi = Math.acos(1 - 2 * (index + 0.5) / imageUrls.length);
+                    const theta = Math.PI * (1 + Math.sqrt(5)) * (index + 0.5);
+                    const radius = 2.5;
+                    
+                    imageMesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                    imageMesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                    imageMesh.position.z = radius * Math.cos(phi);
+                    
+                    imageMesh.lookAt(0, 0, 0);
+                    
+                    imageMesh.userData = {
+                        originalScale: new THREE.Vector3(1, 1, 1),
+                        isHovered: false,
+                        imageUrl: url,
+                        index: index
+                    };
+                    
+                    scene.add(imageMesh);
+                    images.push(imageMesh);
+                });
+            });
+        }
+        
+        
+        // 초기화
+        init();
+        
+        // 전역 함수
+        window.loadUserImages = loadUserImages;
+        
+        console.log('Kyrgyzstan 3D Archive loaded. Use loadUserImages([...urls]) to load your images.');
+    </script>
+</body>
+</html>
