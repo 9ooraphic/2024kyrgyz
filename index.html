@@ -194,7 +194,7 @@
             camera.position.z = 4;
             
             // Renderer 설정
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x000000, 0);
             document.getElementById('container').appendChild(renderer.domElement);
@@ -229,18 +229,29 @@
             imageFiles.forEach((filename, index) => {
                 const loader = new THREE.TextureLoader();
                 loader.load(
-                    filename, // 실제 파일명 먼저 시도!
-                    function(texture) {
-                        // 성공 - 실제 이미지 로드됨
-                        console.log('Loaded real image:', filename);
-                        createImageMesh(texture, index, filename);
-                    },
+    filename, // 실제 파일명 먼저 시도!
+    function(texture) {
+        // 텍스처 선명하게 설정 (이 부분을 새로 추가)
+        texture.minFilter = THREE.NearestFilter;
+        texture.magFilter = THREE.NearestFilter;
+        texture.generateMipmaps = false;
+        
+        // 성공 - 실제 이미지 로드됨
+        
+        console.log('Loaded real image:', filename);
+        createImageMesh(texture, index, filename);
+    },
                     undefined,
                     function(error) {
                         // 실패 - 플레이스홀더 사용
                         console.log('Failed to load:', filename, 'Using placeholder');
                         const placeholderUrl = createPlaceholderImage(index);
                         loader.load(placeholderUrl, function(texture) {
+
+                        texture.minFilter = THREE.NearestFilter;
+                        texture.magFilter = THREE.NearestFilter;
+                        texture.generateMipmaps = false;
+
                             createImageMesh(texture, index, filename);
                         });
                     }
@@ -252,7 +263,7 @@
             // 이미지 원본 비율 계산
             const img = texture.image;
             const aspect = img.width / img.height;
-            const baseSize = 0.35;
+            const baseSize = 0.5;
             
             let width, height;
             if (aspect > 1) {
@@ -563,7 +574,7 @@ function onTouchEnd(event) {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             const pixelRatio = Math.min(window.devicePixelRatio, 2); // 최대 2배까지
-renderer.setPixelRatio(Math.min(window.devicePixelRatio * 2, 4)); // 2배 증가
+renderer.setPixelRatio(1);
 renderer.setSize(window.innerWidth, window.innerHeight);
         }
         
