@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -33,7 +34,7 @@
         <div id="imageModal">
             <button id="closeButton">✕</button>
             <img id="modalImage" src="" alt="Enlarged image">
-            <div id="photoCredit" style="position: absolute; top: calc(50% + 35vh + 40px); left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.8); font-size: 14px; text-align: center; opacity: 0; transition: opacity 0.3s ease; z-index: 2001;">
+            <div id="photoCredit" style="position: absolute; top: calc(50% + 3vh + 40px); left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.8); font-size: 14px; text-align: center; opacity: 0; transition: opacity 0.3s ease; z-index: 2001;">
                 Photo by <span id="photographerName">Unknown</span>
             </div>
         </div>
@@ -228,19 +229,12 @@
             imageFiles.forEach((filename, index) => {
                 const loader = new THREE.TextureLoader();
                 loader.load(
-    filename, // 실제 파일명 먼저 시도!
-    function(texture) {
-        // 텍스처 선명도 향상 (이 부분을 추가)
-        texture.minFilter = THREE.NearestFilter;
-        texture.magFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
-        texture.wrapS = THREE.ClampToEdgeWrap;
-        texture.wrapT = THREE.ClampToEdgeWrap;
-        
-        // 성공 - 실제 이미지 로드됨
-        console.log('Loaded real image:', filename);
-        createImageMesh(texture, index, filename);
-    },
+                    filename, // 실제 파일명 먼저 시도!
+                    function(texture) {
+                        // 성공 - 실제 이미지 로드됨
+                        console.log('Loaded real image:', filename);
+                        createImageMesh(texture, index, filename);
+                    },
                     undefined,
                     function(error) {
                         // 실패 - 플레이스홀더 사용
@@ -569,7 +563,7 @@ function onTouchEnd(event) {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             const pixelRatio = Math.min(window.devicePixelRatio, 2); // 최대 2배까지
-renderer.setPixelRatio(pixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio * 2, 4)); // 2배 증가
 renderer.setSize(window.innerWidth, window.innerHeight);
         }
         
