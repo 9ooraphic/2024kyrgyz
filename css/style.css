@@ -45,7 +45,7 @@
             transform: translateX(-50%);
             color: rgba(214, 214, 214, 0.9);
             z-index: 100;
-            font-family: 'Noto Serif KR', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 24px;
             font-weight: 400;
             letter-spacing: 2px;
@@ -266,16 +266,19 @@
                 left: 50%;
                 transform: translateX(-50%);
             }
-            
+            #photoCredit {
+        top: calc(50% + 25vh + 20px) !important;
+    }
+}
             #instructions {
                 font-size: 10px;
-                bottom: 15px;
+                bottom: 40px;
                 left: 20px;
             }
             
             #copyright {
                 font-size: 10px;
-                bottom: 15px;
+                bottom: 40px;
                 right: 20px;
             }
             
@@ -302,7 +305,7 @@
                 right: 15px;
                 max-width: 250px;
             }
-        }
+        
         
         /* 작은 모바일 화면 */
         @media (max-width: 480px) {
