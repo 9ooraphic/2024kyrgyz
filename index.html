@@ -192,7 +192,8 @@
             // Renderer 설정
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 0);
+            const bgTexture = new THREE.TextureLoader().load('images/bg1.jpg');
+            scene.background = bgTexture;
             document.getElementById('container').appendChild(renderer.domElement);
             
             // 조명 설정
