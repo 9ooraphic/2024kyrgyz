@@ -31,6 +31,10 @@
         body.dragging {
             cursor: grabbing;
         }
+        canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
 
         @supports (-webkit-touch-callout: none) {
     body {
