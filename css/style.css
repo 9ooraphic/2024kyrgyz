@@ -5,12 +5,26 @@
             padding: 0;
             box-sizing: border-box;
         }
+
+        #container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: 
+        linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.4)),
+        url('../images/bg1.jpg') center/cover no-repeat fixed !important;
+}
+
+
         body {
             font-family: 'Noto Serif KR', serif;
             overflow: hidden;
             height: 100vh;
             cursor: grab;
-            background: red;
+            background: 
+            linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.4)),
+            url('/images/bg1.jpg') center/cover no-repeat fixed;
+
         }
         
 
