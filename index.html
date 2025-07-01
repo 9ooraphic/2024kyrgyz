@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
     <title>Kyrgyzstan</title>
@@ -192,8 +196,7 @@
             // Renderer 설정
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            const bgTexture = new THREE.TextureLoader().load('images/bg1.jpg');
-            scene.background = bgTexture;
+            renderer.setClearColor(0x000000, 0);
             document.getElementById('container').appendChild(renderer.domElement);
             
             // 조명 설정
