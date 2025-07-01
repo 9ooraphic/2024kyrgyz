@@ -31,6 +31,16 @@
         body.dragging {
             cursor: grabbing;
         }
+
+        @supports (-webkit-touch-callout: none) {
+    body {
+        min-height: -webkit-fill-available;
+    }
+    
+    #container {
+        min-height: -webkit-fill-available;
+    }
+}
         
         #container {
             width: 100vw;
