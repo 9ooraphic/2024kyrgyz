@@ -197,6 +197,7 @@
             renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x000000, 0);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio * 1.5, 3));
             document.getElementById('container').appendChild(renderer.domElement);
             
             // 조명 설정
@@ -228,14 +229,13 @@
             
             imageFiles.forEach((filename, index) => {
                 const loader = new THREE.TextureLoader();
-                loader.load(
-    filename, // 실제 파일명 먼저 시도!
+                loader.load( filename, // 실제 파일명 먼저 시도!
     function(texture) {
         // 텍스처 선명하게 설정 (이 부분을 새로 추가)
-        texture.minFilter = THREE.NearestFilter;
-        texture.magFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
-        
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         // 성공 - 실제 이미지 로드됨
         
         console.log('Loaded real image:', filename);
