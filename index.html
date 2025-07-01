@@ -63,8 +63,11 @@
         let mouseX = 0; // 마우스 X 위치 (-1 ~ 1)
         let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         let uploadedImages = []; // 업로드된 이미지들
-        let loadedImagesCount = 0;
-        let totalImages = 0;
+
+        let lastTouchDistance = 0;
+        let isMultiTouch = false;
+        let lastTouchCenter = { x: 0, y: 0 };
+        
         
         // 50개 이미지 파일들과 사진작가 정보
         const imageFiles = [];
@@ -175,7 +178,7 @@
             ctx.font = '14px Arial';
             ctx.fillText('Kyrgyzstan', 200, 220);
             
-            return canvas.toDataURL('image/jpeg', 0.5); // 60% 품질로 압축
+            return canvas.toDataURL();
         }
         
         function init() {
@@ -218,9 +221,6 @@
         function createImageSphere() {
             const radius = 2.5;
             const imageCount = imageFiles.length;
-
-            totalImages = imageCount;
-            loadedImagesCount = 0;
             
             imageFiles.forEach((filename, index) => {
                 const loader = new THREE.TextureLoader();
@@ -230,7 +230,6 @@
                         // 성공 - 실제 이미지 로드됨
                         console.log('Loaded real image:', filename);
                         createImageMesh(texture, index, filename);
-                        checkAllImagesLoaded();
                     },
                     undefined,
                     function(error) {
@@ -244,52 +243,8 @@
                 );
             });
         }
-        function checkAllImagesLoaded() {
-    loadedImagesCount++;
-    
-    const progress = Math.round((loadedImagesCount / totalImages) * 100);
-    console.log(`Loading progress: ${progress}%`);
-    
-    if (loadedImagesCount >= totalImages) {
-        setTimeout(() => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('title').style.display = 'block';
-            document.getElementById('instructions').style.display = 'block';
-            document.getElementById('copyright').style.display = 'block';
-        }, 500);
-    }
-}
+        
         function createImageMesh(texture, index, filename) {
-            
-            if (isMobile && texture.image) {
-            const canvas = document.createElement('canvas');
-            const maxSize = 256; // 최대 256x256으로 제한
-            
-            // 비율 유지하면서 크기 조정
-            let newWidth, newHeight;
-            if (texture.image.width > texture.image.height) {
-                newWidth = maxSize;
-                newHeight = (texture.image.height / texture.image.width) * maxSize;
-            } else {
-                newHeight = maxSize;
-                newWidth = (texture.image.width / texture.image.height) * maxSize;
-            }
-            
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(texture.image, 0, 0, newWidth, newHeight);
-            
-            // 60% 품질로 압축된 새 텍스처 생성
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-            const img = new Image();
-            img.onload = function() {
-                texture.image = img;
-                texture.needsUpdate = true;
-            };
-            img.src = compressedDataUrl;
-        }
             // 이미지 원본 비율 계산
             const img = texture.image;
             const aspect = img.width / img.height;
@@ -352,9 +307,9 @@
             canvas.addEventListener('click', onCanvasClick, false);
             
             // 터치 이벤트
-            canvas.addEventListener('touchstart', onTouchStart, false);
-            canvas.addEventListener('touchmove', onTouchMove, false);
-            canvas.addEventListener('touchend', onTouchEnd, false);
+            canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+            canvas.addEventListener('touchend', onTouchEnd, { passive: false });
             
             // 스크롤 이벤트 (더 민감하게)
             canvas.addEventListener('wheel', onWheel, false);
@@ -421,8 +376,8 @@
                 };
                 
                 // 더 민감한 회전
-                targetRotation.y += deltaMove.x * 0.005;
-                targetRotation.x += deltaMove.y * 0.005;
+                targetRotation.y += deltaMove.x * 0.015;
+                targetRotation.x += deltaMove.y * 0.015;
                 
                 targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
                 
@@ -456,86 +411,136 @@
         }
         
         // 터치 이벤트
-        let touchStartTime = 0;
-        let touchMoved = false;
-        let initialPinchDistance = 0;
-let lastPinchDistance = 0;
+ // 터치 이벤트
+let touchStartTime = 0;
+let touchMoved = false;
 
-function getTouchDistance(touch1, touch2) {
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
+function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
-        
-        function onTouchStart(event) {
-            if (isModalOpen) return;
-            event.preventDefault();
-            
-            if (event.touches.length === 1) {
-                touchStartTime = Date.now();
-                touchMoved = false;
-                isDragging = true;
-                previousMousePosition = {
-                    x: event.touches[0].clientX,
-                    y: event.touches[0].clientY
-                };
-            }
-            else if (event.touches.length === 2) {
-        // 핀치 줌
-        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-        const pinchDelta = currentPinchDistance - lastPinchDistance;
-        
-        // 줌 적용 (손가락 벌리면 확대, 모으면 축소)
-        camera.position.z -= pinchDelta * 0.01;
-        camera.position.z = Math.max(1.5, Math.min(8, camera.position.z));
-        
-        lastPinchDistance = currentPinchDistance;
+
+function getTouchCenter(touches) {
+    return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+}
+
+function onTouchStart(event) {
+    if (isModalOpen) return;
+    event.preventDefault();
+    
+    const touches = event.touches;
+    
+    if (touches.length === 1) {
+        // 단일 터치 - 회전
+        touchStartTime = Date.now();
+        touchMoved = false;
+        isDragging = true;
+        isMultiTouch = false;
+        previousMousePosition = {
+            x: touches[0].clientX,
+            y: touches[0].clientY
+        };
+    } else if (touches.length === 2) {
+        // 두 손가락 터치 - 확대/축소
+        isMultiTouch = true;
+        isDragging = false;
+        lastTouchDistance = getTouchDistance(touches);
+        lastTouchCenter = getTouchCenter(touches);
     }
-        }
+}
+
+function onTouchMove(event) {
+    event.preventDefault();
+    if (isModalOpen) return;
+    
+    const touches = event.touches;
+    
+    if (touches.length === 1 && isDragging && !isMultiTouch) {
+        // 단일 터치 드래그 - 자유로운 회전
+        touchMoved = true;
+        const deltaMove = {
+            x: touches[0].clientX - previousMousePosition.x,
+            y: touches[0].clientY - previousMousePosition.y
+        };
         
-        function onTouchMove(event) {
-            event.preventDefault();
-            if (isDragging && event.touches.length === 1 && !isModalOpen) {
-                touchMoved = true;
-                const deltaMove = {
-                    x: event.touches[0].clientX - previousMousePosition.x,
-                    y: event.touches[0].clientY - previousMousePosition.y
-                };
-                
-                targetRotation.y += deltaMove.x * 0.015;
-                targetRotation.x += deltaMove.y * 0.015;
-                
-                targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
-                
-                previousMousePosition = {
-                    x: event.touches[0].clientX,
-                    y: event.touches[0].clientY
-                };
-            }
-        }
+        // PC와 동일한 자유로운 회전
+        targetRotation.y += deltaMove.x * 0.015;
+        targetRotation.x += deltaMove.y * 0.015;
         
-        function onTouchEnd(event) {
-            event.preventDefault();
-            isDragging = false;
+        // X축 회전 제한
+        targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
+        
+        previousMousePosition = {
+            x: touches[0].clientX,
+            y: touches[0].clientY
+        };
+    } else if (touches.length === 2 && isMultiTouch) {
+        // 두 손가락 - 확대/축소
+        const currentDistance = getTouchDistance(touches);
+        const currentCenter = getTouchCenter(touches);
+        
+        // 핀치 줌
+        if (lastTouchDistance > 0) {
+            const scale = currentDistance / lastTouchDistance;
+            const zoomSpeed = 0.02;
             
-            // 탭 감지 (짧은 터치)
-            if (!touchMoved && (Date.now() - touchStartTime) < 300) {
-                const touch = event.changedTouches[0];
-                const mouse = new THREE.Vector2();
-                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(images);
-                
-                if (intersects.length > 0) {
-                    // 터치된 이미지의 줌 효과
-                    const clickedImage = intersects[0].object;
-                    zoomToCenter(clickedImage);
-                }
+            if (scale > 1) {
+                // 확대
+                camera.position.z -= zoomSpeed;
+            } else {
+                // 축소
+                camera.position.z += zoomSpeed;
+            }
+            
+            // 줌 범위 제한
+            camera.position.z = Math.max(1.5, Math.min(8, camera.position.z));
+        }
+        
+        lastTouchDistance = currentDistance;
+        lastTouchCenter = currentCenter;
+    }
+}
+
+function onTouchEnd(event) {
+    event.preventDefault();
+    const touches = event.touches;
+    
+    if (touches.length === 0) {
+        // 모든 터치 종료
+        isDragging = false;
+        isMultiTouch = false;
+        lastTouchDistance = 0;
+        
+        // 탭 감지 (짧은 터치이고 움직이지 않았을 때)
+        if (!touchMoved && (Date.now() - touchStartTime) < 300) {
+            const touch = event.changedTouches[0];
+            const mouse = new THREE.Vector2();
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(images);
+            
+            if (intersects.length > 0) {
+                const clickedImage = intersects[0].object;
+                zoomToCenter(clickedImage);
             }
         }
+    } else if (touches.length === 1 && isMultiTouch) {
+        // 두 손가락에서 한 손가락으로 전환
+        isMultiTouch = false;
+        isDragging = true;
+        previousMousePosition = {
+            x: touches[0].clientX,
+            y: touches[0].clientY
+        };
+    }
+}
         
         function onWheel(event) {
             if (isModalOpen) return;
@@ -732,36 +737,39 @@ function getTouchDistance(touch1, touch2) {
         }
         
         function animate() {
-    requestAnimationFrame(animate);
-    
-    if (!isModalOpen && !isTransitioning) {
-        // 부드러운 수동 회전 애니메이션 (모바일/데스크톱 공통)
-        rotation.x += (targetRotation.x - rotation.x) * 0.08;
-        rotation.y += (targetRotation.y - rotation.y) * 0.08;
-        
-        if (isMobile) {
-    // 모바일: 원래대로 단순하게
-    scene.rotation.x = rotation.x;
-    scene.rotation.y = rotation.y + autoRotateSpeed;
-} else {
-            // 데스크톱: 커서 위치 기반 회전
-            const cursorInfluence = mouseX * 0.003;
-            const speedMultiplier = 1 + Math.abs(mouseX) * 0.5;
-            scene.rotation.x = rotation.x;
-            scene.rotation.y = rotation.y + (autoRotateSpeed + cursorInfluence) * speedMultiplier;
+            requestAnimationFrame(animate);
+            
+            if (!isModalOpen && !isTransitioning) {
+                if (isMobile) {
+    scene.rotation.y += autoRotateSpeed;
+            } else {
+                const cursorInfluence = mouseX * 0.003;
+                const speedMultiplier = 1 + Math.abs(mouseX) * 0.5;
+                scene.rotation.y += (autoRotateSpeed + cursorInfluence) * speedMultiplier;
+            }
+
+                // 부드러운 수동 회전 애니메이션 (모바일과 데스크톱 모두 동일)
+                rotation.x += (targetRotation.x - rotation.x) * 0.08;
+                rotation.y += (targetRotation.y - rotation.y) * 0.08;
+
+                scene.rotation.x = rotation.x;
+                scene.rotation.y += (targetRotation.y - rotation.y) * 0.08;
+                
+                scene.rotation.x = rotation.x;
+                // Y축은 자동회전과 수동회전 합성
+                if (!isMobile) {
+                    scene.rotation.y += (targetRotation.y - rotation.y) * 0.08;
+                }
+                
+                // 호버 효과
+                images.forEach(image => {
+                    const targetScale = image.userData.isHovered ? 1.15 : 1.0;
+                    image.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
+                });
+            }
+            
+            renderer.render(scene, camera);
         }
-        
-        // 호버 효과 (데스크톱만)
-        if (!isMobile) {
-            images.forEach(image => {
-                const targetScale = image.userData.isHovered ? 1.15 : 1.0;
-                image.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
-            });
-        }
-    }
-    
-    renderer.render(scene, camera);
-}
         
         // 사용자 이미지 로드 함수
         function loadUserImages(imageUrls) {
@@ -802,7 +810,6 @@ function getTouchDistance(touch1, touch2) {
                 });
             });
         }
-        
         
         // 초기화
         init();
