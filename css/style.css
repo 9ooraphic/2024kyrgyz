@@ -17,7 +17,7 @@
 
 
         body {
-            font-family: 'Noto Serif KR', serif;
+            font-family:'Noto Serif KR', serif;
             overflow: hidden;
             height: 100vh;
             cursor: grab;
@@ -275,6 +275,7 @@
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
+                font-family: 'Noto Serif KR', serif;
             }
             #photoCredit {
         top: calc(50% + 25vh + 20px) !important;
@@ -321,6 +322,7 @@
         @media (max-width: 480px) {
             #title {
                 font-size: 18px;
+                font-family: 'Noto Serif KR', serif;
             }
             
             #instructions, #copyright {
@@ -332,6 +334,7 @@
         @media (max-width: 320px) {
             #title {
                 font-size: 16px;
+            
             }
             
             #instructions, #copyright {
